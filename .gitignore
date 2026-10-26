@@ -1,0 +1,24 @@
+# Só vai para a internet o que o site usa. Todo o resto (quadros do filme,
+# imagens originais da IA, prompts, versões antigas, LEIA-ME) fica só no PC.
+# Arquivo novo na raiz do site só sobe se for liberado aqui embaixo com "!".
+/*
+!/.gitignore
+!/.nojekyll
+!/index.html
+!/estilo.css
+!/lente.js
+!/livros.js
+!/estante.js
+!/formularios.js
+!/animacoes.js
+
+# Imagens: sobe a pasta img/, menos as fotos do template e o símbolo de perfil
+!/img/
+/img/hero-*.png
+/img/simbolo-perfil.png
+
+# Filme de 10 s: roda ao vivo no navegador, só precisa da página e da trilha
+!/motion/
+/motion/*
+!/motion/index.html
+!/motion/trilha.wav

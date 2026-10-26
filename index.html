@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rafael te Fala | IA sem cara de IA</title>
+  <meta name="description" content="IA prática para terapeutas que trabalham sozinhas. Use a IA no seu negócio sem ficar com cara de IA.">
+  <!-- Prévia: pede ao Google para não listar o site. Apagar esta linha no lançamento. -->
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="img/simbolo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilo.css">
+  <!-- Liga as animações (animacoes.js), menos para quem pediu "reduzir movimento" -->
+  <script>if (!matchMedia("(prefers-reduced-motion: reduce)").matches) document.documentElement.classList.add("anima");</script>
+</head>
+<body>
+
+  <!-- Efeitos de papel usados nas capas desenhadas da estante (estante.js). Não aparece na tela. -->
+  <svg class="defs-papel" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="papel-sombra" x="-30%" y="-30%" width="160%" height="160%">
+        <feDropShadow dx="0.8" dy="2.2" stdDeviation="1.6" flood-color="#081F22" flood-opacity="0.5" />
+      </filter>
+      <filter id="papel-fibra" x="0" y="0" width="100%" height="100%">
+        <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="3" seed="7" />
+        <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.9 0 0 0 -0.35" />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- ============ TOPO (menu) ============ -->
+  <header class="topo">
+    <div class="container topo-linha">
+      <a href="#inicio" class="marca">
+        <img src="img/simbolo.png" alt="" width="40" height="40">
+        <span>Rafael te Fala</span>
+      </a>
+      <nav class="menu">
+        <a href="#sobre">Sobre</a>
+        <a href="#estante">Estante</a>
+        <a href="#conteudos">Conteúdos</a>
+        <a href="#gratis">Material grátis</a>
+        <a href="#cursos">Cursos</a>
+      </nav>
+    </div>
+    <div class="progresso" aria-hidden="true"></div>
+  </header>
+
+  <main>
+
+    <!-- ============ INÍCIO (a promessa + a lente) ============
+         O celular mostra a legenda que a Maria (terapeuta fictícia) vai postar.
+         Fora da lente: o texto que a IA escreveu com a ficha da Maria (post__humano).
+         Dentro da lente: o que a mesma IA escreveu sem contexto (post__ia).
+         Cada sinal de "cara de IA" é um <span class="sinal" data-sinal="NOME">, e NOME
+         tem que ser igual ao data-sinal de um item da lista de sinais embaixo do celular.
+         O efeito fica no arquivo lente.js. -->
+    <section id="inicio" class="hero">
+      <div class="hero__fundo" aria-hidden="true"></div>
+      <svg class="hero__grade" aria-hidden="true" width="100%" height="100%">
+        <defs>
+          <pattern id="grade" width="48" height="48" patternUnits="userSpaceOnUse" x="0" y="0">
+            <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#F7F1E8" stroke-width="0.6" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#grade)" />
+      </svg>
+      <div class="hero__ruido" aria-hidden="true"></div>
+
+      <div class="hero__casca">
+        <div class="hero__texto">
+          <p class="sobretitulo" data-anima>Rafael te fala de IA</p>
+          <h1 data-anima>Use a IA no seu negócio <em>sem ficar com cara de IA.</em></h1>
+          <p class="lead" data-anima>
+            Você atende, posta, responde o WhatsApp e cuida das contas sozinha.
+            A IA pode ser a sua melhor companhia nisso. Eu te mostro como,
+            passo a passo, no celular e sem precisar pagar nada.
+          </p>
+          <div class="botoes" data-anima>
+            <a href="#gratis" class="botao botao-principal">Quero o material grátis</a>
+            <a href="#estante" class="botao botao-claro">Ver a estante</a>
+          </div>
+        </div>
+
+        <div class="hero__palco">
+          <p class="lente-dica" data-anima>
+            <span class="so-mouse">Passe a lente pelo post da Maria</span>
+            <span class="so-toque">Arraste a lente pelo post da Maria</span>
+          </p>
+
+          <div class="celular" data-anima="cartao">
+            <div class="celular__tela">
+              <div class="celular__ilha" aria-hidden="true"></div>
+              <div class="app-topo" aria-hidden="true">
+                <span class="app-topo__voltar">‹</span>
+                <span class="app-topo__titulo">Nova publicação</span>
+                <span class="app-topo__acao">Compartilhar</span>
+              </div>
+              <div class="app-autora">
+                <span class="app-autora__foto" aria-hidden="true">M</span>
+                <span><strong>Maria</strong><small>terapeuta de reiki</small></span>
+              </div>
+
+              <div class="post">
+                <div class="post__texto post__humano">
+                  <p>Terça uma cliente chegou dizendo que fazia três semanas que não dormia direito.</p>
+                  <p>Saiu da sessão bocejando e já marcou a próxima.</p>
+                  <p>Abri dois horários na quinta, às 14h e às 16h.</p>
+                  <p>Se quiser um deles, me chama aqui no direct.</p>
+                </div>
+                <div class="post__texto post__ia" aria-label="O mesmo post escrito pela IA sem contexto">
+                  <p><span class="sinal" data-sinal="abertura">Você já parou para pensar</span> no <span class="sinal" data-sinal="inflada">poder transformador</span> do Reiki? <span class="sinal sinal--emoji" data-sinal="emoji">✨</span></p>
+                  <p>Ele <span class="sinal" data-sinal="naoe">não é apenas uma terapia</span> <span class="sinal" data-sinal="travessao">—</span> <span class="sinal" data-sinal="naoe">é uma jornada</span> de cura profunda. <span class="sinal sinal--emoji" data-sinal="emoji">🌿</span></p>
+                  <p>Em cada sessão, você encontra <span class="sinal" data-sinal="tres">leveza, equilíbrio e harmonia</span>.</p>
+                  <p>Agende já a sua <span class="sinal" data-sinal="inflada">experiência única</span>.</p>
+                  <p><span class="sinal" data-sinal="efeito">Permita-se.</span> <span class="sinal sinal--emoji" data-sinal="emoji">💫</span></p>
+                </div>
+                <div class="lente" tabindex="0" role="img" aria-label="Lente. Use as setas do teclado para mover.">
+                  <span class="lente__etiqueta">sem contexto</span>
+                </div>
+              </div>
+
+              <ul class="app-opcoes" aria-hidden="true">
+                <li>Adicionar localização</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sinais" data-anima>
+            <p class="sinais__conta" aria-live="polite"><strong>0</strong> de 7 sinais de cara de IA encontrados</p>
+            <ul class="sinais__lista">
+              <li data-sinal="abertura">Abertura genérica</li>
+              <li data-sinal="inflada">Palavra inflada</li>
+              <li data-sinal="emoji">Emoji demais</li>
+              <li data-sinal="naoe">Não é X, é Y</li>
+              <li data-sinal="travessao">Travessão</li>
+              <li data-sinal="tres">Tudo em três</li>
+              <li data-sinal="efeito">Frase de efeito</li>
+            </ul>
+            <p class="sinais__legenda">Fora da lente: a IA com a ficha da Maria. Dentro da lente: a mesma IA, sem contexto.</p>
+            <button type="button" class="lente-tudo" aria-pressed="false">Mostrar o texto todo</button>
+            <p class="sinais__fim" hidden>
+              Você achou os 7. Eles somem quando a IA conhece você, e a ficha que
+              ensina isso a ela está no <a href="#gratis">material grátis</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FILME (motion graphics de 10 s) ============
+         O filme fica em motion/index.html e roda dentro deste quadro.
+         Começa sozinho, sem som, quando aparece na tela; o botão dentro dele toca com som.
+         A versão em vídeo (MP4) e o contact sheet ficam em motion/saida/. -->
+    <section id="filme" class="secao secao-filme">
+      <div class="container">
+        <p class="sobretitulo centro" data-anima>Em 10 segundos</p>
+        <h2 data-anima>Da pergunta à sua empresa</h2>
+        <div class="filme" data-anima="cartao">
+          <iframe src="motion/index.html" title="Animação de 10 segundos: da busca na internet até a sua empresa de uma pessoa só" loading="lazy" allow="autoplay"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SOBRE ============ -->
+    <section id="sobre" class="secao">
+      <div class="container estreito">
+        <h2 data-anima>Quem te fala</h2>
+        <p data-anima>
+          Sou de exatas, trabalho com tecnologia e uso IA todo dia há mais de dois anos.
+          Já criei aplicativos, sites e ferramentas para resolver problemas de gestão
+          de um jeito simples.
+        </p>
+        <p data-anima>
+          Aqui eu não te ensino o que é IA. Eu parto da sua dificuldade
+          (não sei o que postar, demoro uma hora numa legenda, meu texto sai artificial)
+          e te mostro o caminho mais curto para resolver.
+        </p>
+        <blockquote data-anima="esquerda">
+          "A IA é uma ferramenta que pode te dar superpoder ou te tornar medíocre.
+          Depende de como você usa."
+        </blockquote>
+        <div class="numeros">
+          <div class="numero" data-anima="cartao"><strong>2+</strong><span>anos usando IA todo dia</span></div>
+          <div class="numero" data-anima="cartao"><strong>R$ 0</strong><span>para começar: vale a IA gratuita</span></div>
+          <div class="numero" data-anima="cartao"><strong>1</strong><span>vídeo novo por semana</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ESTANTE (livros e e-books) ============
+         Os livros vêm do arquivo livros.js: para pôr, tirar ou mudar um livro, edite só ele.
+         Clicar num livro abre a ficha dele (estante.js). O link direto de cada livro é
+         rafaeltefala.com.br/#livro-ID (o ID está no livros.js), bom para a bio e os Stories. -->
+    <section id="estante" class="secao secao-estante">
+      <div class="container">
+        <p class="sobretitulo centro" data-anima>Livros e e-books</p>
+        <h2 data-anima>A estante</h2>
+        <p class="centro estante__chamada" data-anima>
+          Três livros em produção, escritos para quem atende sozinha.
+          Clique no que você quer ler e entre na lista: o mais pedido sai primeiro.
+        </p>
+        <ul class="estante__livros"></ul>
+      </div>
+    </section>
+
+    <!-- ============ CONTEÚDOS (YouTube) ============ -->
+    <section id="conteudos" class="secao secao-clara">
+      <div class="container">
+        <h2 data-anima>Conteúdos</h2>
+        <p class="centro" data-anima>Um vídeo novo por semana no YouTube.</p>
+
+        <div class="grade-videos">
+          <!--
+            PARA COLOCAR UM VÍDEO: no YouTube, clique em Compartilhar > Incorporar,
+            copie só o endereço que está dentro de src="..." e cole no lugar de
+            ENDERECO_DO_VIDEO abaixo. Depois apague a <div class="video-vazio"> do mesmo cartão.
+          -->
+          <article class="cartao" data-anima="cartao">
+            <div class="video-vazio">Vídeo 1 em breve</div>
+            <!-- <iframe src="ENDERECO_DO_VIDEO" title="Vídeo 1" allowfullscreen></iframe> -->
+            <h3>Por que o seu texto sai com cara de IA</h3>
+          </article>
+          <article class="cartao" data-anima="cartao">
+            <div class="video-vazio">Vídeo 2 em breve</div>
+            <h3>Como falar com a sua IA</h3>
+          </article>
+          <article class="cartao" data-anima="cartao">
+            <div class="video-vazio">Vídeo 3 em breve</div>
+            <h3>Ensine a IA a escrever do seu jeito</h3>
+          </article>
+        </div>
+
+        <div class="centro" data-anima>
+          <a href="https://www.youtube.com/@rafaeltefala" class="botao botao-secundario" target="_blank" rel="noopener">Ir para o canal</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MATERIAL GRÁTIS (captação de e-mail) ============
+         O envio é feito pelo formularios.js (lá diz como ligar a uma ferramenta de e-mail). -->
+    <section id="gratis" class="secao">
+      <div class="container estreito">
+        <h2 data-anima>Material grátis</h2>
+        <p class="centro" data-anima>
+          Receba no seu e-mail a ficha que eu uso para a IA escrever do meu jeito.
+          Você preenche em 15 minutos e usa em qualquer IA, até na gratuita.
+        </p>
+        <form class="formulario" data-anima data-formulario="material-gratis"
+              data-sucesso="Pronto, {nome}. A ficha chega no seu e-mail em alguns minutos.">
+          <input type="text" name="nome" placeholder="Seu primeiro nome" autocomplete="given-name" required>
+          <input type="email" name="email" placeholder="Seu melhor e-mail" autocomplete="email" required>
+          <button type="submit" class="botao botao-principal">Quero receber</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ============ CURSOS ============ -->
+    <section id="cursos" class="secao secao-escura">
+      <div class="container estreito centro">
+        <h2 data-anima>Cursos</h2>
+        <p data-anima>
+          O curso principal está sendo preparado: monte a IA do seu método, sem cara de IA.
+          Quer saber primeiro quando abrir? Deixe o seu e-mail no material grátis.
+        </p>
+        <!-- Quando o curso estiver na Hotmart, troque o href="#gratis" pelo link do produto -->
+        <a href="#gratis" class="botao botao-principal" data-anima>Quero ser avisada</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FICHA DO LIVRO (abre por cima da página) ============
+       Preenchida pelo estante.js com os dados do livros.js. -->
+  <dialog class="painel" aria-labelledby="painel-titulo">
+    <div class="painel__veu"></div>
+    <div class="painel__caixa">
+      <div class="painel__papel" aria-hidden="true"></div>
+      <button type="button" class="painel__fechar" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 5l14 14M19 5L5 19" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" /></svg>
+      </button>
+      <div class="painel__capa"></div>
+      <div class="painel__info">
+        <p class="painel__tipo"></p>
+        <h3 class="painel__titulo" id="painel-titulo"></h3>
+        <p class="painel__sub"></p>
+        <p class="painel__para"></p>
+        <h4>O que tem dentro</h4>
+        <ul class="painel__dentro"></ul>
+        <a class="botao botao-principal painel__comprar" href="#" target="_blank" rel="noopener" hidden></a>
+        <form class="formulario formulario--lista" data-formulario="lista-de-espera"
+              data-sucesso="Pronto, {nome}. Você está na lista de {livro} e recebe um e-mail quando ele sair.">
+          <input type="hidden" name="livro">
+          <input type="text" name="nome" placeholder="Seu primeiro nome" autocomplete="given-name" required>
+          <input type="email" name="email" placeholder="Seu melhor e-mail" autocomplete="email" required>
+          <button type="submit" class="botao botao-principal">Me avise quando sair</button>
+          <p class="formulario__nota">O livro com mais pedidos sai primeiro.</p>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============ RODAPÉ ============
+       ANTES DE PÔR O PRIMEIRO LINK DE COMPRA: acrescentar aqui o nome da empresa
+       que vende, o CNPJ e um e-mail de contato (exigência do comércio eletrônico). -->
+  <footer class="rodape">
+    <div class="container rodape-linha">
+      <p>Rafael te Fala</p>
+      <nav>
+        <a href="https://www.instagram.com/rafaeltefala" target="_blank" rel="noopener">Instagram</a>
+        <a href="https://www.youtube.com/@rafaeltefala" target="_blank" rel="noopener">YouTube</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="livros.js"></script>
+  <script src="formularios.js"></script>
+  <script src="lente.js"></script>
+  <script src="estante.js"></script>
+  <!-- Biblioteca de animação Motion (motion.dev) e as animações do site -->
+  <script src="https://cdn.jsdelivr.net/npm/motion@11.11.17/dist/motion.js"></script>
+  <script src="animacoes.js"></script>
+</body>
+</html>

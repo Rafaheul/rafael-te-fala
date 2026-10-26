@@ -1,0 +1,677 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rafael te Fala | 10 segundos</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Nunito:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=block" rel="stylesheet">
+<!--
+  Motion graphics do site: 10 s, 16:9 (palco de 1920 x 1080), 30 quadros por segundo.
+
+  Tudo aqui é função do tempo: quadro(t) desenha exatamente o instante t.
+  Por isso o vídeo renderizado (ferramentas/render.py) é idêntico ao que roda no site.
+  As molas são física de mola de verdade (massa, rigidez, amortecimento), calculadas
+  pela fórmula fechada, sem depender do relógio do navegador.
+
+  Linha do tempo (120 BPM, 1 batida = 0,5 s; a trilha.wav segue os mesmos tempos):
+    0,0 a 2,0  busca: clique em 0,5; digita "Como criar minha empresa pessoal com IA"; Enter em 2,0
+    2,0 a 4,0  a barra de busca vira o painel da promessa; o cursor sublinha "sem cara de IA"
+    4,0 a 6,5  o painel se divide em 3 cartões; checks em 4,5 / 5,0 / 5,5
+    6,5 a 10   os cartões viram código (matrix), a empresa nasce, clique em "Ajuda da IA" em 9,5
+
+  Abrir com ?render=1 tira os botões (é o modo que o render.py usa).
+-->
+<style>
+  :root {
+    --petroleo: #1F5F63; --coral: #C4553E; --coral-claro: #F0A08F;
+    --creme: #F7F1E8; --tinta: #22303A; --noite: #0B171B; --agua: #6FC3BE;
+    --titulo: "Playfair Display", Georgia, serif;
+    --texto: "Nunito", "Segoe UI", Arial, sans-serif;
+    --mono: "JetBrains Mono", Consolas, "MS Gothic", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--noite); overflow: hidden; }
+  #moldura { position: relative; width: 100%; height: 100%; overflow: hidden; }
+  #palco {
+    position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+    transform-origin: 0 0; overflow: hidden; background: var(--noite);
+    font-family: var(--texto); color: var(--creme);
+  }
+  canvas { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  .abs { position: absolute; left: 0; top: 0; will-change: transform; }
+
+  /* marca e cantoneiras de HUD */
+  #marca { left: 64px; top: 52px; display: flex; align-items: center; gap: 16px; }
+  #marca img { width: 54px; height: 54px; }
+  #marca span { font-family: var(--titulo); font-size: 30px; color: var(--creme); letter-spacing: 0.01em; }
+  #hud { left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+  #tempo { right: 64px; left: auto; top: 66px; font: 500 18px var(--mono); color: rgba(247,241,232,.45); letter-spacing: .18em; }
+
+  /* casca: a barra de busca que vira o painel da promessa */
+  #casca {
+    border-radius: 60px;
+    background: linear-gradient(135deg, rgba(247,241,232,.10), rgba(247,241,232,.03) 55%, rgba(111,195,190,.06));
+    border: 1.5px solid rgba(247,241,232,.22);
+    box-shadow: 0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12), 0 0 0 1px rgba(196,85,62,.0);
+    backdrop-filter: blur(14px);
+  }
+  #lupa { position: absolute; left: 44px; top: 50%; width: 44px; height: 44px; margin-top: -22px; }
+  #dica { position: absolute; left: 110px; top: 50%; transform: translateY(-50%); font: 600 40px var(--texto); color: rgba(247,241,232,.38); white-space: nowrap; }
+  #ir {
+    position: absolute; right: 18px; top: 50%; width: 84px; height: 84px; margin-top: -42px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #E07A62, var(--coral) 60%, #9E3F2C);
+    box-shadow: 0 0 30px rgba(196,85,62,.55), inset 0 1px 0 rgba(255,255,255,.35);
+    display: grid; place-items: center;
+  }
+  #linha1 { white-space: nowrap; font-weight: 700; color: var(--creme); line-height: 1; }
+  #linha1 .caret { display: inline-block; width: 4px; height: .95em; margin-left: 6px; vertical-align: -0.12em; background: var(--coral-claro); box-shadow: 0 0 12px var(--coral); border-radius: 2px; }
+  #linha2 { white-space: nowrap; font: 700 104px var(--titulo); color: var(--coral-claro); line-height: 1; text-shadow: 0 0 28px rgba(196,85,62,.55); }
+  #rotulo { font: 700 20px var(--mono); letter-spacing: .32em; color: var(--agua); white-space: nowrap; }
+  #sublinha { height: 7px; border-radius: 4px; transform-origin: 0 50%;
+    background: linear-gradient(90deg, var(--coral), var(--coral-claro) 60%, var(--creme));
+    box-shadow: 0 0 18px rgba(240,160,143,.9), 0 0 42px rgba(196,85,62,.7); }
+
+  /* cartões dos serviços */
+  .cartao {
+    border-radius: 34px; overflow: hidden;
+    background: linear-gradient(160deg, rgba(247,241,232,.11), rgba(247,241,232,.03) 60%, rgba(111,195,190,.05));
+    border: 1.5px solid rgba(247,241,232,.22);
+    box-shadow: 0 30px 70px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12);
+    backdrop-filter: blur(14px);
+  }
+  .cartao .miolo { position: absolute; left: 0; top: 0; width: 500px; height: 420px; }
+  .cartao svg { position: absolute; left: 48px; top: 56px; width: 72px; height: 72px; overflow: visible; }
+  .cartao .num { position: absolute; right: 48px; top: 74px; font: 700 22px var(--mono); color: rgba(247,241,232,.4); letter-spacing: .2em; }
+  .cartao h3 { position: absolute; left: 48px; right: 40px; top: 168px; margin: 0; font: 700 46px/1.14 var(--titulo); color: var(--creme); }
+  .cartao .estado { position: absolute; left: 48px; bottom: 44px; font: 700 18px var(--mono); letter-spacing: .26em; }
+
+  /* empresa nascendo */
+  #titulo { white-space: nowrap; font: 700 128px var(--titulo); color: var(--creme); line-height: 1; text-shadow: 0 0 40px rgba(111,195,190,.45), 0 4px 30px rgba(0,0,0,.6); }
+  #titulo span { display: inline-block; }
+  #titulo .gig { color: var(--coral-claro); text-shadow: 0 0 36px rgba(196,85,62,.75); }
+  #status { white-space: nowrap; font: 700 22px var(--mono); letter-spacing: .3em; color: rgba(247,241,232,.72); }
+  #status b { color: var(--agua); font-weight: 700; }
+  #botao {
+    width: 460px; height: 116px; border-radius: 58px; display: flex; align-items: center; justify-content: center; gap: 18px;
+    background: radial-gradient(120% 140% at 30% 20%, #E58C75, var(--coral) 55%, #93392A);
+    font: 800 44px var(--texto); color: var(--creme); letter-spacing: .01em;
+    box-shadow: 0 0 0 2px rgba(247,241,232,.25) inset, 0 20px 50px rgba(0,0,0,.5);
+  }
+  #flash { inset: 0; width: 1920px; height: 1080px; background: radial-gradient(circle at 50% 59%, rgba(255,240,230,.95), rgba(240,160,143,.4) 40%, rgba(0,0,0,0) 75%); opacity: 0; pointer-events: none; }
+
+  #cursor { width: 46px; height: 46px; filter: drop-shadow(0 0 10px rgba(240,160,143,.9)) drop-shadow(0 0 22px rgba(196,85,62,.7)); }
+
+  /* controles (só no site) */
+  #controles { position: absolute; left: 16px; bottom: 16px; display: flex; gap: 8px; z-index: 5; }
+  #controles button {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(247,241,232,.35);
+    background: rgba(11,23,27,.72); color: var(--creme); font: 700 14px var(--texto);
+    backdrop-filter: blur(6px);
+  }
+  #controles button:hover { background: rgba(31,95,99,.9); }
+  #controles button:focus-visible { outline: 2px solid var(--coral-claro); outline-offset: 2px; }
+  .render #controles { display: none; }
+  @media (max-width: 560px) {
+    #controles { left: 8px; bottom: 8px; }
+    #controles button { padding: 5px 10px; gap: 6px; font-size: 11px; }
+    #controles svg { width: 12px; height: 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="moldura">
+  <div id="palco" aria-label="Animação: uma busca por como criar a empresa pessoal com IA vira a promessa do Rafael te Fala, três serviços marcados e a empresa nascendo.">
+    <canvas id="fundo" width="1920" height="1080"></canvas>
+
+    <svg id="hud" class="abs" viewBox="0 0 1920 1080" aria-hidden="true">
+      <g fill="none" stroke="rgba(247,241,232,.28)" stroke-width="2">
+        <path d="M40 120 V40 H120"/><path d="M1800 40 H1880 V120"/>
+        <path d="M40 960 V1040 H120"/><path d="M1800 1040 H1880 V960"/>
+      </g>
+    </svg>
+    <div id="marca" class="abs"><img src="../img/simbolo.png" alt=""><span>Rafael te Fala</span></div>
+    <div id="tempo" class="abs">00:00</div>
+
+    <div id="casca" class="abs" aria-hidden="true">
+      <svg id="lupa" viewBox="0 0 44 44"><circle cx="19" cy="19" r="12" fill="none" stroke="#F0A08F" stroke-width="3.5"/><path d="M28 28 L38 38" stroke="#F0A08F" stroke-width="4" stroke-linecap="round"/></svg>
+      <div id="dica">Pergunte qualquer coisa</div>
+      <div id="ir"><svg width="38" height="38" viewBox="0 0 38 38"><path d="M8 19 H29 M20 10 L29 19 L20 28" fill="none" stroke="#F7F1E8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    </div>
+    <div id="rotulo" class="abs">MELHOR RESULTADO</div>
+    <div id="linha1" class="abs"></div>
+    <div id="linha2" class="abs"></div>
+    <div id="sublinha" class="abs"></div>
+
+    <div class="cartao abs" data-titulo="Excluindo rastros da IA" data-num="01"></div>
+    <div class="cartao abs" data-titulo="Administrando uma grande empresa" data-num="02"></div>
+    <div class="cartao abs" data-titulo="Você, IA e muita criatividade" data-num="03"></div>
+
+    <div id="titulo" class="abs"></div>
+    <div id="status" class="abs"></div>
+    <div id="botao" class="abs">
+      <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 2 C21.5 13 27 18.5 38 20 C27 21.5 21.5 27 20 38 C18.5 27 13 21.5 2 20 C13 18.5 18.5 13 20 2 Z" fill="#F7F1E8"/></svg>
+      <span>Ajuda da IA</span>
+    </div>
+
+    <canvas id="luz" width="1920" height="1080"></canvas>
+    <div id="flash" class="abs"></div>
+    <svg id="cursor" class="abs" viewBox="0 0 46 46" aria-hidden="true">
+      <defs><linearGradient id="gc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#F7F1E8"/></linearGradient></defs>
+      <path d="M3 3 L3 37 L12.5 28.5 L19 42 L25 39 L18.6 25.8 L31 25.8 Z" fill="url(#gc)" stroke="#C4553E" stroke-width="2.2" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <div id="controles">
+    <button id="comSom" type="button">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z" fill="currentColor"/><path d="M11 5.5c1 1.4 1 3.6 0 5M13 3.5c2 2.6 2 6.4 0 9" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>
+      <span>Assistir com som</span>
+    </button>
+  </div>
+</div>
+<audio id="trilha" src="trilha.wav" preload="auto"></audio>
+
+<script>
+// ===================== tempo, molas e sorteio fixo =====================
+const W = 1920, H = 1080, DUR = 10, FPS = 30;
+
+// Mola de massa 1: k = rigidez, c = amortecimento. Devolve o avanço de 0 a 1
+// (passa de 1 quando a mola é elástica e volta, como uma mola de verdade).
+const MOLA = {
+  suave:    { k: 120, c: 21 },
+  firme:    { k: 260, c: 29 },
+  elastica: { k: 240, c: 15 },
+  lenta:    { k: 46,  c: 13 },
+  cursor:   { k: 170, c: 24 },
+  rapida:   { k: 420, c: 34 },
+};
+function mola(t, m) {
+  if (t <= 0) return 0;
+  const w0 = Math.sqrt(m.k), z = m.c / (2 * w0);
+  if (z < 1) {
+    const wd = w0 * Math.sqrt(1 - z * z);
+    return 1 - Math.exp(-z * w0 * t) * (Math.cos(wd * t) + (z * w0 / wd) * Math.sin(wd * t));
+  }
+  return 1 - Math.exp(-w0 * t) * (1 + w0 * t);
+}
+// Valor com várias molas em sequência: [[t0, v0], [t1, v1, "mola"], ...]
+function trilha(t, chaves) {
+  let v = chaves[0][1];
+  for (let i = 1; i < chaves.length; i++) {
+    const [ti, vi, m = "suave"] = chaves[i];
+    v += (vi - chaves[i - 1][1]) * mola(t - ti, MOLA[m]);
+  }
+  return v;
+}
+const lim = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const mistura = (a, b, p) => a + (b - a) * p;
+const suav = (a, b, x) => { const u = lim((x - a) / (b - a)); return u * u * (3 - 2 * u); };
+
+// Sorteio que depende só dos números de entrada: o mesmo quadro sai sempre igual
+function sorte(...n) {
+  let h = 2166136261;
+  for (const x of n) { h ^= (x * 2654435761) >>> 0; h = Math.imul(h ^ (h >>> 15), 2246822507); h ^= h >>> 13; }
+  return ((h >>> 0) % 100000) / 100000;
+}
+const GLIFOS = "01ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜ<>/{}[]=+*#ΣΔΛΞ";
+const glifo = (i, t, s = 0) => GLIFOS[Math.floor(sorte(i, s, Math.floor(t * FPS)) * GLIFOS.length)];
+
+// Troca um texto por outro letra a letra, passando por glifos de código
+function embaralhar(alvo, origem, t, t0, passo = 0.018, dur = 0.14, s = 0) {
+  const n = Math.max(alvo.length, origem.length);
+  let out = "";
+  for (let i = 0; i < n; i++) {
+    const ti = t0 + i * passo;
+    if (t < ti) out += origem[i] ?? "";
+    else if (t < ti + dur) out += (alvo[i] === " " && (origem[i] ?? " ") === " ") ? " " : glifo(i, t, s);
+    else out += alvo[i] ?? "";
+  }
+  return out;
+}
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// ===================== roteiro =====================
+const BUSCA = "Como criar minha empresa pessoal com IA";
+const L1 = "Sua empresa de uma pessoa só,";
+const L2 = "sem cara de IA.";
+const TITULO = "Minha Empresa Gigante";
+const T_TECLA = 0.56, PASSO_TECLA = 0.033;
+const CLIQUES = [0.5, 2.0, 4.5, 5.0, 5.5, 9.5];
+const CHECKS = [4.5, 5.0, 5.5];
+
+const R_BUSCA = { x: 370, y: 480, w: 1180, h: 120, r: 60 };
+const R_PROM  = { x: 200, y: 270, w: 1520, h: 540, r: 40 };
+const R_CART  = [0, 1, 2].map((i) => ({ x: 160 + i * 550, y: 330, w: 500, h: 420, r: 34 }));
+const BOTAO = { x: 960, y: 640 };
+
+const $ = (s) => document.querySelector(s);
+const el = {
+  palco: $("#palco"), fundo: $("#fundo"), luz: $("#luz"), casca: $("#casca"), dica: $("#dica"), ir: $("#ir"),
+  lupa: $("#lupa"), linha1: $("#linha1"), linha2: $("#linha2"), rotulo: $("#rotulo"), sublinha: $("#sublinha"),
+  cartoes: [...document.querySelectorAll(".cartao")], titulo: $("#titulo"), status: $("#status"),
+  botao: $("#botao"), flash: $("#flash"), cursor: $("#cursor"), tempo: $("#tempo"), marca: $("#marca"),
+};
+const cf = el.fundo.getContext("2d"), cl = el.luz.getContext("2d");
+
+// Monta o miolo dos cartões
+el.cartoes.forEach((c) => {
+  c.innerHTML = `<div class="miolo">
+    <svg viewBox="0 0 72 72"><circle class="aro" cx="36" cy="36" r="33" fill="none" stroke="rgba(247,241,232,.45)" stroke-width="2.5"/>
+      <circle class="disco" cx="36" cy="36" r="33" fill="#C4553E"/>
+      <path class="v" d="M21 37 L32 48 L52 25" fill="none" stroke="#F7F1E8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" pathLength="1" stroke-dasharray="1"/></svg>
+    <div class="num"></div><h3></h3><div class="estado"></div></div>`;
+});
+// Letras do título, cada uma num <span>
+el.titulo.innerHTML = [...TITULO].map((ch, i) =>
+  `<span class="${i >= 14 ? "gig" : ""}">${ch === " " ? "&nbsp;" : ch}</span>`).join("");
+const letras = [...el.titulo.children];
+
+// Medidas que dependem da fonte (feitas depois que as fontes carregam)
+let U0 = 700, U1 = 1220, LARG_TITULO = 1300, cursorChaves = null;
+function medir() {
+  el.linha2.textContent = L2.slice(0, -1);
+  const semPonto = el.linha2.offsetWidth;
+  el.linha2.textContent = L2;
+  const total = el.linha2.offsetWidth;
+  U0 = 960 - total / 2; U1 = U0 + semPonto;
+  LARG_TITULO = el.titulo.offsetWidth;
+
+  const ck = R_CART.map((r) => [r.x + 84, r.y + 92]);
+  // Caminho do cursor: [tempo, x, y, mola]. Cada parada é uma mola nova.
+  cursorChaves = [
+    [-1, 2080, 1240],
+    [0.0, 760, 548, "cursor"],      // entra e para na barra
+    [1.0, 1490, 540, "suave"],      // vai até o botão enquanto digita
+    [2.12, 1640, 820, "suave"],     // sai do caminho do painel que cresce
+    [2.55, U0 - 6, 690, "suave"],   // começo de "sem cara de IA"
+    [3.02, U1, 690, "lenta"],       // sublinha: o rastro escreve a linha
+    [4.02, ck[0][0], ck[0][1], "cursor"],
+    [4.6, ck[1][0], ck[1][1], "cursor"],
+    [5.1, ck[2][0], ck[2][1], "cursor"],
+    [5.72, 1690, 880, "suave"],
+    [6.28, 260, 250, "rapida"],     // risco que corta a tela na virada para código
+    [7.05, 1650, 300, "lenta"],
+    [8.6, BOTAO.x + 178, BOTAO.y + 22, "cursor"],  // clica na ponta direita do botão, sem cobrir o texto
+  ];
+}
+function cursorEm(t) {
+  const k = cursorChaves;
+  return [trilha(t, k.map((c) => [c[0], c[1], c[3]])), trilha(t, k.map((c) => [c[0], c[2], c[3]]))];
+}
+
+// ===================== fundo: grade, poeira, código e prédios =====================
+function intensidadeChuva(t) {
+  if (t < 6.42) return 0;
+  return suav(6.42, 6.75, t) * mistura(1, 0.38, suav(7.7, 8.6, t)) + 0.5 * Math.exp(-Math.max(0, t - 9.5) * 5) * (t > 9.5);
+}
+
+function desenharFundo(t, cx, cy) {
+  const c = cf;
+  const g = c.createRadialGradient(960, 520, 80, 960, 540, 1150);
+  g.addColorStop(0, "#18444A"); g.addColorStop(0.55, "#0F2629"); g.addColorStop(1, "#070F12");
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+
+  // luz coral que acompanha o cursor
+  const lg = c.createRadialGradient(cx, cy, 0, cx, cy, 520);
+  lg.addColorStop(0, "rgba(196,85,62,0.16)"); lg.addColorStop(1, "rgba(196,85,62,0)");
+  c.fillStyle = lg; c.fillRect(0, 0, W, H);
+
+  // grade com paralaxe leve (some quando entra o código)
+  const ag = 0.075 * (1 - 0.8 * suav(6.4, 7.0, t));
+  const px = ((cx / W) - 0.5) * -18, py = ((cy / H) - 0.5) * -12;
+  c.strokeStyle = `rgba(247,241,232,${ag})`; c.lineWidth = 1;
+  c.beginPath();
+  for (let x = (px % 64) - 64; x < W + 64; x += 64) { c.moveTo(x, 0); c.lineTo(x, H); }
+  for (let y = (py % 64) - 64; y < H + 64; y += 64) { c.moveTo(0, y); c.lineTo(W, y); }
+  c.stroke();
+  // pontos de luz nos cruzamentos perto do cursor
+  for (let x = (px % 64) - 64; x < W + 64; x += 64) for (let y = (py % 64) - 64; y < H + 64; y += 64) {
+    const d = Math.hypot(x - cx, y - cy);
+    if (d < 340) { c.fillStyle = `rgba(240,160,143,${(1 - d / 340) * 0.5 * (ag / 0.075)})`; c.fillRect(x - 1.5, y - 1.5, 3, 3); }
+  }
+
+  // poeira flutuando
+  for (let i = 0; i < 46; i++) {
+    const x = (sorte(i, 1) * W + t * (8 + sorte(i, 2) * 18)) % W;
+    const y = (sorte(i, 3) * H - t * (10 + sorte(i, 4) * 26) + H * 4) % H;
+    const a = 0.12 + 0.25 * sorte(i, 5) * (0.6 + 0.4 * Math.sin(t * 3 + i));
+    c.fillStyle = i % 4 ? `rgba(247,241,232,${a})` : `rgba(240,160,143,${a})`;
+    c.beginPath(); c.arc(x, y, 1 + sorte(i, 6) * 1.8, 0, 7); c.fill();
+  }
+
+  // chuva de código
+  const I = intensidadeChuva(t);
+  if (I > 0) {
+    c.font = "500 22px 'JetBrains Mono', 'MS Gothic', monospace";
+    c.textAlign = "center";
+    for (let col = 0; col < 80; col++) {
+      const x = col * 24 + 12;
+      const inicio = 6.42 + Math.abs(x - 960) / 960 * 0.3 + sorte(col, 9) * 0.08;
+      if (t < inicio) continue;
+      const v = 380 + sorte(col, 10) * 520;
+      const cauda = 14 + Math.floor(sorte(col, 11) * 18);
+      const y0 = 300 + sorte(col, 12) * 480;          // nasce na altura dos cartões
+      let y = y0 + (t - inicio) * v;
+      const ciclo = H + cauda * 24 + 120;
+      if (y > H + cauda * 24) y = ((y - (H + cauda * 24)) % ciclo) - 120;
+      const cabeca = Math.floor(y / 24);
+      const coral = sorte(col, 13) > 0.72;
+      for (let k = 0; k < cauda; k++) {
+        const lin = cabeca - k, yy = lin * 24;
+        if (yy < -24 || yy > H + 24) continue;
+        const ch = GLIFOS[Math.floor(sorte(col, lin, Math.floor(t * 10 + sorte(col, lin) * 7)) * GLIFOS.length)];
+        const a = Math.pow(1 - k / cauda, 1.6) * I;
+        if (k === 0) { c.fillStyle = `rgba(255,248,240,${a})`; c.shadowColor = "#F0A08F"; c.shadowBlur = 14; }
+        else { c.shadowBlur = 0; c.fillStyle = coral ? `rgba(240,160,143,${a})` : `rgba(111,195,190,${a * 0.95})`; }
+        c.fillText(ch, x, yy);
+      }
+    }
+    c.shadowBlur = 0;
+  }
+
+  // prédios da empresa subindo (6,8 s em diante)
+  if (t > 6.78) {
+    const n = 13, base = H;
+    for (let i = 0; i < n; i++) {
+      const larg = 92 + sorte(i, 20) * 46;
+      const xC = 160 + (i + 0.5) * (1600 / n) + (sorte(i, 21) - 0.5) * 20;
+      const alvoH = 150 + 230 * Math.exp(-Math.pow((i - 6) / 3.2, 2)) + sorte(i, 22) * 70;
+      const h = alvoH * Math.max(0, mola(t - (6.8 + Math.abs(i - 6) * 0.055), MOLA.elastica));
+      if (h < 2) continue;
+      const x0 = xC - larg / 2, y0 = base - h;
+      const gr = c.createLinearGradient(0, y0, 0, base);
+      gr.addColorStop(0, "rgba(31,95,99,0.55)"); gr.addColorStop(1, "rgba(31,95,99,0.05)");
+      c.fillStyle = gr; c.fillRect(x0, y0, larg, h);
+      c.strokeStyle = "rgba(111,195,190,0.85)"; c.lineWidth = 2; c.shadowColor = "#6FC3BE"; c.shadowBlur = 16;
+      c.beginPath(); c.moveTo(x0, base); c.lineTo(x0, y0); c.lineTo(x0 + larg, y0); c.lineTo(x0 + larg, base); c.stroke();
+      c.shadowBlur = 0;
+      // janelas acendendo como dados
+      for (let jy = y0 + 16; jy < base - 10; jy += 22) for (let jx = x0 + 12; jx < x0 + larg - 16; jx += 22) {
+        const s = sorte(i, Math.round(jx), Math.round(jy - y0), Math.floor(t * 6));
+        if (s > 0.5) { c.fillStyle = s > 0.86 ? "rgba(240,160,143,0.85)" : "rgba(247,241,232,0.42)"; c.fillRect(jx, jy, 9, 9); }
+      }
+    }
+    // linha do horizonte
+    const hz = c.createLinearGradient(0, 0, W, 0);
+    hz.addColorStop(0, "rgba(196,85,62,0)"); hz.addColorStop(0.5, "rgba(240,160,143,0.9)"); hz.addColorStop(1, "rgba(196,85,62,0)");
+    c.fillStyle = hz; c.globalAlpha = suav(6.8, 7.2, t); c.fillRect(0, H - 3, W, 3); c.globalAlpha = 1;
+  }
+
+  // véu escuro atrás do título, para ler bem sobre o código
+  const veu = suav(7.2, 7.8, t);
+  if (veu > 0) {
+    const vg = c.createRadialGradient(960, 470, 40, 960, 470, 820);
+    vg.addColorStop(0, `rgba(7,15,18,${0.82 * veu})`); vg.addColorStop(0.6, `rgba(7,15,18,${0.45 * veu})`); vg.addColorStop(1, "rgba(7,15,18,0)");
+    c.fillStyle = vg; c.fillRect(0, 0, W, H);
+  }
+
+  // vinheta
+  const vn = c.createRadialGradient(960, 540, 520, 960, 540, 1250);
+  vn.addColorStop(0, "rgba(0,0,0,0)"); vn.addColorStop(1, "rgba(0,0,0,0.55)");
+  c.fillStyle = vn; c.fillRect(0, 0, W, H);
+}
+
+// ===================== luz: rastro do cursor, faíscas e ondas =====================
+function desenharLuz(t) {
+  const c = cl;
+  c.clearRect(0, 0, W, H);
+  c.globalCompositeOperation = "lighter";
+  c.lineCap = "round"; c.lineJoin = "round";
+
+  // rastro: as posições do cursor nos últimos 0,3 s
+  const N = 36, dt = 1 / 120, pts = [];
+  for (let j = 0; j <= N; j++) pts.push(cursorEm(t - j * dt));
+  const camadas = [
+    { w: 34, cor: "196,85,62", a: 0.22, blur: 30 },
+    { w: 14, cor: "240,160,143", a: 0.55, blur: 18, tremor: 5 },
+    { w: 4.5, cor: "255,250,244", a: 0.95, blur: 8 },
+  ];
+  for (const cam of camadas) {
+    c.shadowColor = `rgba(${cam.cor},1)`; c.shadowBlur = cam.blur;
+    for (let j = 0; j < N; j++) {
+      const [x1, y1] = pts[j], [x2, y2] = pts[j + 1];
+      if (Math.hypot(x2 - x1, y2 - y1) < 0.3) continue;
+      const f = 1 - j / N;
+      let ox = 0, oy = 0;
+      if (cam.tremor) { // tremor elétrico, perpendicular ao movimento
+        const d = Math.hypot(x2 - x1, y2 - y1), r = (sorte(j, Math.floor(t * FPS)) - 0.5) * cam.tremor * 2 * f;
+        ox = -(y2 - y1) / d * r; oy = (x2 - x1) / d * r;
+      }
+      c.strokeStyle = `rgba(${cam.cor},${cam.a * Math.pow(f, 1.4)})`;
+      c.lineWidth = cam.w * (0.25 + 0.75 * f);
+      c.beginPath(); c.moveTo(x1 + ox, y1 + oy); c.lineTo(x2, y2); c.stroke();
+    }
+  }
+  c.shadowBlur = 0;
+
+  // faíscas soltas pelo caminho (mais faíscas quando o cursor anda rápido)
+  const VIDA = 0.7;
+  for (let k = Math.floor((t - VIDA) * 90); k <= Math.floor(t * 90); k++) {
+    const tau = k / 90, idade = t - tau;
+    if (idade < 0 || idade > VIDA) continue;
+    const [ax, ay] = cursorEm(tau), [bx, by] = cursorEm(tau - 1 / 120);
+    const vel = Math.hypot(ax - bx, ay - by) * 120;
+    const peso = lim(vel / 700) * 0.9 + 0.1;
+    if (sorte(k, 30) > peso) continue;
+    const x = ax + (sorte(k, 31) - 0.5) * 160 * idade - (ax - bx) * 6 * idade;
+    const y = ay + (sorte(k, 32) - 0.5) * 160 * idade - 60 * idade;
+    const a = Math.pow(1 - idade / VIDA, 1.5);
+    c.fillStyle = sorte(k, 33) > 0.5 ? `rgba(255,236,224,${a})` : `rgba(240,160,143,${a})`;
+    c.beginPath(); c.arc(x, y, (1.2 + sorte(k, 34) * 2.4) * (1 - idade / VIDA * 0.6), 0, 7); c.fill();
+  }
+
+  // halo pulsando em volta da ponta do cursor
+  const [cx, cy] = pts[0];
+  const pul = 0.5 + 0.5 * Math.sin(t * 9);
+  const hg = c.createRadialGradient(cx, cy, 0, cx, cy, 46 + pul * 10);
+  hg.addColorStop(0, "rgba(255,240,230,0.55)"); hg.addColorStop(0.35, "rgba(240,160,143,0.28)"); hg.addColorStop(1, "rgba(196,85,62,0)");
+  c.fillStyle = hg; c.beginPath(); c.arc(cx, cy, 60, 0, 7); c.fill();
+
+  // ondas de clique
+  for (const tc of CLIQUES) {
+    const id = t - tc, grande = tc === 9.5, vida = grande ? 1.1 : 0.7;
+    if (id < 0 || id > vida) continue;
+    const [kx, ky] = cursorEm(tc);
+    const p = 1 - Math.pow(1 - id / vida, 3);
+    const raio = 8 + (grande ? 1100 : 150) * p, a = 1 - id / vida;
+    c.strokeStyle = `rgba(240,160,143,${a})`; c.lineWidth = grande ? 6 : 3;
+    c.shadowColor = "#F0A08F"; c.shadowBlur = 20;
+    c.beginPath(); c.arc(kx, ky, raio, 0, 7); c.stroke();
+    if (grande) { c.strokeStyle = `rgba(111,195,190,${a * 0.8})`; c.beginPath(); c.arc(kx, ky, raio * 0.62, 0, 7); c.stroke(); }
+    c.shadowBlur = 0;
+    const nf = grande ? 40 : 14; // faíscas do clique
+    for (let i = 0; i < nf; i++) {
+      const ang = sorte(i, tc * 10) * Math.PI * 2, dist = (grande ? 520 : 120) * p * (0.5 + sorte(i, tc * 10 + 1) * 0.6);
+      c.fillStyle = `rgba(255,236,224,${a})`;
+      c.beginPath(); c.arc(kx + Math.cos(ang) * dist, ky + Math.sin(ang) * dist, 2.4 * a + 0.6, 0, 7); c.fill();
+    }
+  }
+  c.globalCompositeOperation = "source-over";
+}
+
+// ===================== quadro(t): desenha o instante t =====================
+function posicionar(e, x, y, extra = "") { e.style.transform = `translate(${x}px, ${y}px) ${extra}`; }
+function retangulo(e, r) { e.style.width = r.w + "px"; e.style.height = r.h + "px"; e.style.borderRadius = r.r + "px"; posicionar(e, r.x, r.y); }
+
+function quadro(t) {
+  const [cx, cy] = cursorEm(t);
+  desenharFundo(t, cx, cy);
+
+  el.tempo.textContent = "00:" + String(Math.floor(t)).padStart(2, "0") + ":" + String(Math.floor((t % 1) * FPS)).padStart(2, "0");
+
+  // ---------- casca: barra de busca -> painel da promessa ----------
+  const pc = mola(t - 2.0, MOLA.firme);
+  const entra = mola(t + 0.25, MOLA.suave);
+  const rc = {};
+  for (const k of ["x", "y", "w", "h", "r"]) rc[k] = mistura(R_BUSCA[k], R_PROM[k], pc);
+  retangulo(el.casca, rc);
+  el.casca.style.transform += ` scale(${mistura(0.9, 1, entra)})`;
+  el.casca.style.opacity = t >= 4.0 ? 0 : lim(entra * 1.2);
+  el.casca.style.borderColor = `rgba(${t > 0.5 && t < 2.0 ? "240,160,143,.65" : "247,241,232,.22"})`;
+  el.casca.style.boxShadow = `0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12), 0 0 ${t > 0.5 && t < 2.0 ? 40 : 0}px rgba(196,85,62,.45)`;
+
+  const someBusca = 1 - lim(mola(t - 2.0, MOLA.rapida) * 1.4);
+  el.lupa.style.opacity = someBusca;
+  el.ir.style.opacity = someBusca;
+  el.ir.style.transform = `scale(${1 - 0.14 * Math.exp(-Math.max(0, t - 2.0) * 14) * (t >= 2.0)})`;
+  el.dica.style.opacity = t < 0.5 ? 1 : lim(1 - (t - 0.5) * 8);
+
+  // ---------- linha 1: o texto digitado vira a primeira linha da promessa ----------
+  let txt1;
+  if (t < T_TECLA) txt1 = "";
+  else if (t < 2.0) txt1 = BUSCA.slice(0, Math.min(BUSCA.length, Math.floor((t - T_TECLA) / PASSO_TECLA) + 1));
+  else {
+    // o que passa do tamanho da frase nova se apaga do fim para o começo (8 ms por letra), para não vazar do painel
+    const resta = Math.max(L1.length, BUSCA.length - Math.floor(Math.max(0, t - 2.02) / 0.008));
+    txt1 = embaralhar(L1, BUSCA.slice(0, resta), t, 2.02, 0.013, 0.16, 1);
+  }
+  const cursorPisca = t > 0.5 && t < 2.0 && (t < 1.9 || Math.floor(t * 4) % 2 === 0);
+  el.linha1.innerHTML = esc(txt1) + (cursorPisca ? '<span class="caret"></span>' : "");
+  el.linha1.style.fontFamily = t < 2.0 ? "var(--texto)" : "var(--titulo)";
+  el.linha1.style.fontSize = mistura(42, 88, pc) + "px";
+  const sai = mola(t - 3.78, MOLA.firme);   // o texto sai um pouco antes do painel se dividir
+  posicionar(el.linha1, mistura(R_BUSCA.x + 110, 960, pc), mistura(540, 470, pc) - 40 * sai, `translate(${-50 * pc}%, -50%)`);
+  el.linha1.style.opacity = 1 - lim(sai * 1.3);
+
+  // ---------- linha 2, rótulo e sublinhado ----------
+  el.linha2.textContent = t < 2.25 ? "" : embaralhar(L2, "", t, 2.28, 0.03, 0.2, 2);
+  const e2 = mola(t - 2.25, MOLA.elastica);
+  posicionar(el.linha2, 960, mistura(650, 610, e2) - 40 * sai, `translate(-50%, -50%) scale(${mistura(0.92, 1, lim(e2))})`);
+  el.linha2.style.opacity = lim(e2 * 1.5) * (1 - lim(sai * 1.3));
+  const er = mola(t - 2.35, MOLA.suave);
+  posicionar(el.rotulo, 960, 362 - 20 * (1 - er) - 40 * sai, "translate(-50%, -50%)");
+  el.rotulo.style.opacity = lim(er) * (1 - lim(sai * 1.3));
+  const ps = lim(mola(t - 3.02, MOLA.lenta));
+  el.sublinha.style.width = (U1 - U0) + "px";
+  posicionar(el.sublinha, U0, 682 - 40 * sai, `scaleX(${ps})`);
+  el.sublinha.style.opacity = (t > 3.02 ? 1 : 0) * (1 - lim(sai * 1.3));
+
+  // ---------- cartões: o painel se divide em três ----------
+  const virando = mola(t - 6.42, MOLA.firme);
+  el.cartoes.forEach((c, i) => {
+    if (t < 4.0) { c.style.opacity = 0; return; }
+    const p = mola(t - 4.0 - i * 0.05, MOLA.firme);
+    const r = {};
+    for (const k of ["x", "y", "w", "h", "r"]) r[k] = mistura(R_PROM[k], R_CART[i][k], p);
+    retangulo(c, r);
+    c.style.transform += ` scale(${mistura(1, 1.04, lim(virando))}, ${1 - 0.97 * lim(virando)})`;
+    c.style.transformOrigin = "50% 50%";
+    c.style.opacity = 1 - suav(6.5, 6.72, t);
+    const ck = CHECKS[i], feito = t >= ck;
+    const brilho = feito ? Math.exp(-(t - ck) * 3) : 0;
+    c.style.borderColor = feito ? `rgba(240,160,143,${0.5 + 0.4 * brilho})` : "rgba(247,241,232,.22)";
+    c.style.boxShadow = `0 30px 70px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12), 0 0 ${feito ? 30 + 40 * brilho : 0}px rgba(196,85,62,${feito ? 0.35 + 0.4 * brilho : 0})`;
+
+    const m = c.querySelector(".miolo");
+    m.style.opacity = suav(4.12 + i * 0.05, 4.32 + i * 0.05, t);
+    const h3 = c.querySelector("h3"), titulo = c.dataset.titulo;
+    let th = embaralhar(titulo, "", t, 4.12 + i * 0.05, 0.012, 0.14, 10 + i);
+    // antes de virar código, as letras do título viram glifos
+    if (t > 6.15) th = [...titulo].map((ch, j) => (ch !== " " && t > 6.15 + i * 0.03 + j * 0.006 ? glifo(j, t, 30 + i) : ch)).join("");
+    h3.textContent = th;
+    c.querySelector(".num").textContent = c.dataset.num;
+    const est = c.querySelector(".estado");
+    est.textContent = feito ? "FEITO" : "PENDENTE";
+    est.style.color = feito ? "#F0A08F" : "rgba(247,241,232,.4)";
+
+    // check: disco coral pula (mola elástica) e o V se desenha
+    const pd = mola(t - ck, MOLA.elastica), pv = lim(mola(t - ck - 0.06, MOLA.firme));
+    const disco = c.querySelector(".disco");
+    disco.setAttribute("r", (33 * Math.max(0, pd)).toFixed(2));
+    disco.style.filter = feito ? `drop-shadow(0 0 ${8 + 14 * brilho}px #C4553E)` : "none";
+    c.querySelector(".v").style.strokeDashoffset = 1 - pv;
+  });
+
+  // ---------- empresa nascendo ----------
+  const vt = t >= 7.3;
+  letras.forEach((s, i) => {
+    const ti = 7.32 + i * 0.032;
+    const p = mola(t - ti, MOLA.elastica);
+    s.style.opacity = vt ? lim(p * 1.6) : 0;
+    s.style.transform = `translateY(${(1 - p) * -60}px)`;
+    const real = TITULO[i];
+    s.textContent = real === " " ? " " : (t < ti + 0.16 ? glifo(i, t, 40) : real);
+  });
+  posicionar(el.titulo, 960, 410, "translate(-50%, -50%)");
+  el.titulo.style.opacity = vt ? 1 : 0;
+
+  const pst = suav(7.1, 8.3, t);
+  el.status.innerHTML = `${pst < 1 ? "CONSTRUINDO SUA EMPRESA" : "SUA EMPRESA ESTÁ NO AR"} &nbsp;<b>${Math.round(pst * 100)}%</b>`;
+  const es = mola(t - 7.1, MOLA.suave);
+  posicionar(el.status, 960, 520 + 20 * (1 - es), "translate(-50%, -50%)");
+  el.status.style.opacity = t > 7.1 ? lim(es) : 0;
+
+  const pb = trilha(t, [[8.5, 0], [8.5, 1, "elastica"], [9.44, 0.92, "rapida"], [9.56, 1.0, "elastica"]]);
+  const perto = suav(8.95, 9.25, t);
+  posicionar(el.botao, BOTAO.x - 230, BOTAO.y - 58, `scale(${Math.max(0, pb) * (1 + 0.04 * perto * (t < 9.44))})`);
+  el.botao.style.opacity = t > 8.5 ? 1 : 0;
+  const halo = 30 + 30 * perto + 80 * Math.exp(-Math.max(0, t - 9.5) * 4) * (t > 9.5);
+  el.botao.style.boxShadow = `0 0 0 2px rgba(247,241,232,.25) inset, 0 20px 50px rgba(0,0,0,.5), 0 0 ${halo}px rgba(240,160,143,.75), 0 0 ${halo * 2}px rgba(196,85,62,.45)`;
+
+  el.flash.style.opacity = t > 9.5 ? 0.55 * Math.exp(-(t - 9.5) * 6) : (t > 6.42 ? 0.22 * Math.exp(-(t - 6.42) * 9) : 0) + (t > 2.0 && t < 2.6 ? 0.18 * Math.exp(-(t - 2.0) * 10) : 0);
+
+  // ---------- luz e cursor ----------
+  desenharLuz(t);
+  let aperto = 1;
+  for (const tc of CLIQUES) if (t >= tc - 0.06 && t < tc + 0.3) aperto = Math.min(aperto, 1 - 0.22 * Math.exp(-Math.abs(t - tc) * 18));
+  posicionar(el.cursor, cx - 4, cy - 4, `scale(${aperto})`);
+  el.cursor.style.transformOrigin = "4px 4px";
+}
+
+// ===================== tocar no site / renderizar =====================
+const MODO_RENDER = new URLSearchParams(location.search).has("render");
+if (MODO_RENDER) document.body.classList.add("render");
+
+function encaixar() {
+  const s = MODO_RENDER ? 1 : Math.min(innerWidth / W, innerHeight / H);
+  el.palco.style.transform = `translate(${(innerWidth - W * s) / 2}px, ${(innerHeight - H * s) / 2}px) scale(${s})`;
+}
+addEventListener("resize", encaixar);
+encaixar();
+
+const audio = $("#trilha"), botaoSom = $("#comSom");
+let tocando = false, inicio = 0, comSom = false;
+
+function tocar(som) {
+  comSom = som;
+  if (som) { audio.currentTime = 0; audio.play().catch(() => { comSom = false; }); }
+  inicio = performance.now(); tocando = true;
+  botaoSom.querySelector("span").textContent = som ? "Ouvindo" : "Assistir com som";
+  requestAnimationFrame(laco);
+}
+function laco(agora) {
+  if (!tocando) return;
+  let t = comSom && !audio.paused ? audio.currentTime : (agora - inicio) / 1000;
+  if (t >= DUR) { t = DUR - 1 / FPS; tocando = false; botaoSom.querySelector("span").textContent = "Ver de novo com som"; }
+  quadro(t);
+  if (tocando) requestAnimationFrame(laco);
+}
+botaoSom.addEventListener("click", () => tocar(true));
+
+window.pronto = (async () => {
+  await document.fonts.load("700 88px 'Playfair Display'");
+  await document.fonts.load("700 42px 'Nunito'");
+  await document.fonts.load("800 44px 'Nunito'");
+  await document.fonts.load("500 22px 'JetBrains Mono'");
+  await document.fonts.load("700 22px 'JetBrains Mono'");
+  await document.fonts.ready;
+  medir();
+  window.quadro = quadro;
+  if (MODO_RENDER) { quadro(0); return true; }
+  const parado = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  quadro(parado ? DUR - 1 / FPS : 0);
+  if (!parado) {
+    // começa sozinho, sem som, quando aparece na tela
+    const obs = new IntersectionObserver((ents) => {
+      if (ents.some((e) => e.isIntersecting) && !tocando) { tocar(false); obs.disconnect(); }
+    }, { threshold: 0.5 });
+    obs.observe(el.palco);
+  }
+  return true;
+})();
+</script>
+</body>
+</html>
