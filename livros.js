@@ -17,8 +17,9 @@
 //   link          o link de compra. Vazio = livro em produção, aparece a lista de espera
 //   preco         o preço, ex.: "R$ 27". Só aparece quando houver link
 //
-// ANTES DE PÔR O PRIMEIRO LINK DE COMPRA: o rodapé do site precisa mostrar o nome
-// da empresa que vende, o CNPJ e um e-mail de contato (ver LEIA-ME.md).
+// O primeiro link (Sem cara de IA) entrou em 25/10/2026 com o OK do Rafael, antes do rodapé.
+// PENDENTE: o rodapé do site mostrar quem vende, o CPF ou CNPJ e um e-mail de contato
+// (Decreto 7.962/2013, art. 2º; ver LEIA-ME.md).
 
 window.LIVROS = [
   {
@@ -37,8 +38,9 @@ window.LIVROS = [
       "Um pedido pronto para a IA revisar o seu próprio texto",
     ],
     onde: "Hotmart",
-    link: "",
-    preco: "",
+    // sck=site_estante: no relatório da Hotmart, a venda aparece como vinda da estante do site
+    link: "https://pay.hotmart.com/C108191719G?sck=site_estante",
+    preco: "R$ 29,90",
   },
   {
     id: "falar",
