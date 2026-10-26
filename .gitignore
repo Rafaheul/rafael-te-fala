@@ -12,6 +12,9 @@
 !/formularios.js
 !/animacoes.js
 
+# Material grátis (cópia do PDF de material-gratis/ficha-de-voz; montar de novo lá e copiar para cá)
+!/ficha-de-voz.pdf
+
 # Imagens: sobe a pasta img/, menos as fotos do template e o símbolo de perfil
 !/img/
 /img/hero-*.png
