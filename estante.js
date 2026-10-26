@@ -64,7 +64,8 @@
         s += `<ellipse cx="100" cy="218" rx="${rx}" ry="${ry}" fill="none" stroke="${cores[n % 3]}" stroke-width="4.2" stroke-linecap="round"
           stroke-dasharray="${30 + ((n * 17) % 40)} 9" stroke-dashoffset="${n * 11}"/>`;
       }
-      return `<g filter="url(#papel-sombra)">${s}</g>`;
+      // 82% do tamanho, centrada em (100, 200): o anel de fora não passa por cima do nome do autor
+      return `<g filter="url(#papel-sombra)"><g transform="translate(18 36) scale(0.82)">${s}</g></g>`;
     },
   };
 
